@@ -5,9 +5,12 @@ CREATE TABLE empleados (
     nombre VARCHAR(100) NOT NULL,
     apellidos VARCHAR(100) NOT NULL,
     puesto VARCHAR(50) NOT NULL,
+    es_operario_planta BOOLEAN DEFAULT TRUE NOT NULL,
+    permisos TEXT[] DEFAULT '{}' NOT NULL,
+    password_hash TEXT, 
     habilitado BOOLEAN DEFAULT TRUE NOT NULL,
     creado_en TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    comentario VARCHAR(255)
+    comentario TEXT
 );
 
 -- Clientes
@@ -38,9 +41,14 @@ CREATE TABLE modulos (
 CREATE TABLE maquinas (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(100) UNIQUE NOT NULL,
-    modulo_id INTEGER REFERENCES modulos(id)
+    modulo_id INTEGER REFERENCES modulos(id),
     tipo VARCHAR(50) NOT NULL,
     estado VARCHAR(30) DEFAULT 'OPERATIVA' NOT NULL,
+    orden_en_produccion_id INTEGER REFERENCES ordenes(id),
+    nodo_en_produccion_id INTEGER REFERENCES nodos(id),
+    orden_en_reserva_id INTEGER REFERENCES ordenes(id),
+    nodo_en_reserva_id INTEGER REFERENCES nodos(id),
+    permiso_necesario VARCHAR(50),
     habilitado BOOLEAN DEFAULT TRUE NOT NULL,
     creado_en TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     comentario TEXT
@@ -103,7 +111,7 @@ CREATE TABLE productos (
     sku VARCHAR(100) UNIQUE NOT NULL,
     nombre VARCHAR(150) NOT NULL,
     cliente_id INTEGER REFERENCES clientes(id) NOT NULL,
-    caracteristicas_inmutables JSONB, -- Aqui entrarian caracteristicas que si se tienen que cambiar ya no es el mismo producto, es otro producto, como las medida de una bolsa
+    caracteristicas_inmutables JSONB,
     habilitado BOOLEAN DEFAULT TRUE NOT NULL,
     unidad_medida VARCHAR(20) NOT NULL,
     creado_en TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -137,15 +145,15 @@ CREATE TABLE nodos (
     id SERIAL PRIMARY KEY,
     capacidad_id INTEGER REFERENCES capacidades(id) NOT NULL,
     version_producto_id INTEGER REFERENCES version_producto(id) NOT NULL,
-    herramientas JSONB, -- Lista de materiales no consumibles como troqueles y clichés.
-    materiales JSONB, -- Lista de materiales consumibles como pegamentos, tintas, peliculas.
-    piezas_entrada JSONB, -- Lista de piezas que entran con cantidades
-    piezas_salida JSONB, -- Lista de piezas que salen con cantidades
+    herramientas JSONB,
+    materiales JSONB,
+    piezas_entrada JSONB,
+    piezas_salida JSONB,
     comentario TEXT
 );
 
 
--- Órdenes de Trabajo / Producción
+-- Órdenes de Trabajo / Pedidos
 CREATE TABLE ordenes (
     id SERIAL PRIMARY KEY,
     numero_orden VARCHAR(50) UNIQUE NOT NULL,
@@ -161,7 +169,7 @@ CREATE TABLE ordenes (
 );
 
 -- Logs de Producción (Registro inmutable paso a paso de lo que ocurre en máquina)
-CREATE TABLE production_logs (
+CREATE TABLE produccion_logs (
     id SERIAL PRIMARY KEY,
     orden_id INTEGER REFERENCES ordenes(id) NOT NULL,
     maquina_id INTEGER REFERENCES maquinas(id) NOT NULL,
@@ -172,6 +180,7 @@ CREATE TABLE production_logs (
     unidades_producidas INTEGER DEFAULT 0 NOT NULL,
     unidades_defectuosas INTEGER DEFAULT 0 NOT NULL,
     parametros_proceso JSONB,
+    terminado BOOLEAN DEFAULT FALSE NOT NULL,
     creado_en TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     comentario TEXT
 );
@@ -180,7 +189,7 @@ CREATE TABLE production_logs (
 CREATE TABLE stock_materiales_logs (
     id SERIAL PRIMARY KEY,
     material_id INTEGER REFERENCES materiales(id) NOT NULL,
-    production_log_id INTEGER REFERENCES production_logs(id),
+    production_log_id INTEGER REFERENCES produccion_logs(id),
     tipo_movimiento VARCHAR(30) NOT NULL,
     cantidad NUMERIC(12, 2) NOT NULL,
     lote_origen VARCHAR(100),
@@ -189,10 +198,10 @@ CREATE TABLE stock_materiales_logs (
 );
 
 -- Movimientos de Piezas
-CREATE TABLE log_stock_piezas_logs (
+CREATE TABLE stock_piezas_logs (
     id SERIAL PRIMARY KEY,
     pieza INTEGER REFERENCES piezas(id) NOT NULL,
-    production_log_id INTEGER REFERENCES production_logs(id),
+    production_log_id INTEGER REFERENCES produccion_logs(id),
     tipo_movimiento VARCHAR(30) NOT NULL,
     cantidad NUMERIC(12, 2) NOT NULL,
     lote_origen VARCHAR(100),

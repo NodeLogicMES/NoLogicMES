@@ -1,37 +1,31 @@
-// Idioma por defecto: el guardado en el navegador o 'es'
-let idiomaActual = localStorage.getItem('nologic_lang') || 'es';
+let currentLang = localStorage.getItem('nologic_lang') || 'en';
 
-async function cargarIdioma(lang) {
+async function loadLang(lang) {
     try {
-        // 1. Descargamos el archivo JSON del idioma
-        const respuesta = await fetch(`/static/langs/${lang}.json`);
-        if (!respuesta.ok) throw new Error(`No se encontró el idioma: ${lang}`);
+        const result = await fetch(`/static/langs/${lang}.json`);
+        if (!result.ok) throw new Error(`No se encontró el idioma: ${lang}`);
         
-        const diccionario = await respuesta.json();
-
-        // 2. Buscamos todos los elementos HTML que tengan el atributo data-i18n
-        document.querySelectorAll('[data-i18n]').forEach(elemento => {
-            const clave = elemento.getAttribute('data-i18n');
-            if (diccionario[clave]) {
-                elemento.textContent = diccionario[clave];
+        const dict = await result.json();
+        document.querySelectorAll('[data-i18n]').forEach(element => {
+            const key = element.getAttribute('data-i18n');
+            if (dict[key]) {
+                element.textContent = dict[key];
+                const width = dict[key].length * 9.5
+                element.parentElement.setAttribute("viewBox", `0 0 ${width} ${width}`) 
             }
         });
-
-        // 3. Guardamos la preferencia y actualizamos la etiqueta <html>
         localStorage.setItem('nologic_lang', lang);
         document.documentElement.lang = lang;
 
     } catch (error) {
-        console.error("Error cargando traducciones:", error);
+        console.error("Error loading translations:", error);
     }
 }
 
-// Función para los botones de cambio de idioma
-function cambiarIdioma(nuevoLang) {
-    cargarIdioma(nuevoLang);
+function changeLang(newLang) {
+    loadLang(newLang);
 }
 
-// Ejecutar automáticamente al cargar cualquier página
 document.addEventListener('DOMContentLoaded', () => {
-    cargarIdioma(idiomaActual);
+    loadLang(currentLang);
 });

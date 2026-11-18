@@ -14,10 +14,10 @@ app.mount("/static", StaticFiles(directory="src/static"), name="static")
 def leer_index():
     return FileResponse("src/static/index.html")
 
-@app.get("/oficina")
+@app.get("/office")
 def leer_oficina():
     return {"status": "oficina", "system": "NoLogic MES"}
 
-@app.get("fabrica")
+@app.get("/factory")
 def leer_fabrica():
     return {"status": "fabrica", "system": "NoLogic MES"}

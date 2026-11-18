@@ -1,211 +1,207 @@
--- Empleados / Operarios
-CREATE TABLE empleados (
+-- Employees / Operators
+CREATE TABLE employees (
     id SERIAL PRIMARY KEY,
-    codigo_empleado VARCHAR(50) UNIQUE NOT NULL,
-    nombre VARCHAR(100) NOT NULL,
-    apellidos VARCHAR(100) NOT NULL,
-    puesto VARCHAR(50) NOT NULL,
-    es_operario_planta BOOLEAN DEFAULT TRUE NOT NULL,
-    permisos TEXT[] DEFAULT '{}' NOT NULL,
-    password_hash TEXT, 
-    habilitado BOOLEAN DEFAULT TRUE NOT NULL,
-    creado_en TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    comentario TEXT
+    employee_code VARCHAR(50) UNIQUE NOT NULL,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    role VARCHAR(50) NOT NULL,
+    is_shopfloor_operator BOOLEAN DEFAULT TRUE NOT NULL,
+    permissions TEXT[] DEFAULT '{}' NOT NULL,
+    password_hash TEXT,
+    change_password BOOLEAN DEFAULT TRUE NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    notes TEXT
 );
 
--- Clientes
-CREATE TABLE clientes (
+-- Customers
+CREATE TABLE customers (
     id SERIAL PRIMARY KEY,
-    codigo_cliente VARCHAR(50) UNIQUE NOT NULL,
-    nombre_fiscal VARCHAR(150) NOT NULL,
-    cif_nif VARCHAR(20) UNIQUE NOT NULL,
-    contacto VARCHAR(100),
+    customer_code VARCHAR(50) UNIQUE NOT NULL,
+    legal_name VARCHAR(150) NOT NULL,
+    tax_id VARCHAR(20) UNIQUE NOT NULL,
+    contact_name VARCHAR(100),
     email VARCHAR(100),
-    telefono VARCHAR(30),
-    comercial INTEGER REFERENCES empleados(id),
-    habilitado BOOLEAN DEFAULT TRUE NOT NULL,
-    creado_en TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    comentario TEXT
+    phone VARCHAR(30),
+    sales_rep_id INTEGER REFERENCES employees(id),
+    is_active BOOLEAN DEFAULT TRUE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    notes TEXT
 );
 
--- Módulos
-CREATE TABLE modulos (
+-- Modules (Work Centers / Machine Groups)
+CREATE TABLE modules (
     id SERIAL PRIMARY KEY,
-    nombre VARCHAR(100) UNIQUE NOT NULL,
-    descripcion TEXT,
-    habilitado BOOLEAN DEFAULT TRUE NOT NULL,
-    creado_en TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    name VARCHAR(100) UNIQUE NOT NULL,
+    description TEXT,
+    is_active BOOLEAN DEFAULT TRUE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Máquinas
-CREATE TABLE maquinas (
-    id SERIAL PRIMARY KEY,
-    nombre VARCHAR(100) UNIQUE NOT NULL,
-    modulo_id INTEGER REFERENCES modulos(id),
-    tipo VARCHAR(50) NOT NULL,
-    estado VARCHAR(30) DEFAULT 'OPERATIVA' NOT NULL,
-    orden_en_produccion_id INTEGER REFERENCES ordenes(id),
-    nodo_en_produccion_id INTEGER REFERENCES nodos(id),
-    orden_en_reserva_id INTEGER REFERENCES ordenes(id),
-    nodo_en_reserva_id INTEGER REFERENCES nodos(id),
-    permiso_necesario VARCHAR(50),
-    habilitado BOOLEAN DEFAULT TRUE NOT NULL,
-    creado_en TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    comentario TEXT
-);
-
--- Capacidad de trabajo
-CREATE TABLE capacidades (
-    id SERIAL PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL,
-    descripcion TEXT,
-    habilitado BOOLEAN DEFAULT TRUE NOT NULL,
-    creado_en TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    
-    maquina_id INTEGER REFERENCES maquinas(id) ON DELETE CASCADE,
-    modulo_id INTEGER REFERENCES modulos(id) ON DELETE CASCADE,
-
-    CONSTRAINT chk_recurso_exclusivo CHECK (
-        (maquina_id IS NOT NULL AND modulo_id IS NULL) OR 
-        (maquina_id IS NULL AND modulo_id IS NOT NULL)
-    ),
-
-    UNIQUE (nombre, maquina_id, modulo_id)
-    
-);
-
--- Herramientas y Clichés
-CREATE TABLE herramientas (
-    id SERIAL PRIMARY KEY,
-    codigo_externo VARCHAR(50),
-    codigo_herramienta VARCHAR(50) UNIQUE NOT NULL,
-    nombre VARCHAR(100) NOT NULL,
-    tipo VARCHAR(50) NOT NULL,
-    fecha_entrada DATE NOT NULL DEFAULT CURRENT_DATE,
-    fecha_ultimo_uso TIMESTAMP WITH TIME ZONE,
-    cantidad_uso INTEGER DEFAULT 0 NOT NULL,
-    vida_util_maxima INTEGER,
-    habilitado BOOLEAN DEFAULT TRUE NOT NULL,
-    creado_en TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    comentario TEXT
-);
-
--- Materias Primas y Componentes
-CREATE TABLE materiales (
-    id SERIAL PRIMARY KEY,
-    codigo_material VARCHAR(50) UNIQUE NOT NULL,
-    nombre VARCHAR(150) NOT NULL,
-    tipo VARCHAR(50) NOT NULL,
-    unidad_medida VARCHAR(20) NOT NULL,
-    stock_actual NUMERIC(12, 2) DEFAULT 0.00 NOT NULL,
-    stock_minimo NUMERIC(12, 2) DEFAULT 0.00 NOT NULL,
-    habilitado BOOLEAN DEFAULT TRUE NOT NULL,
-    creado_en TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    comentario TEXT
-);
-
-
--- Productos
-CREATE TABLE productos (
+-- Products
+CREATE TABLE products (
     id SERIAL PRIMARY KEY,
     sku VARCHAR(100) UNIQUE NOT NULL,
-    nombre VARCHAR(150) NOT NULL,
-    cliente_id INTEGER REFERENCES clientes(id) NOT NULL,
-    caracteristicas_inmutables JSONB,
-    habilitado BOOLEAN DEFAULT TRUE NOT NULL,
-    unidad_medida VARCHAR(20) NOT NULL,
-    creado_en TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    comentario TEXT
+    name VARCHAR(150) NOT NULL,
+    customer_id INTEGER REFERENCES customers(id) NOT NULL,
+    immutable_specs JSONB,
+    is_active BOOLEAN DEFAULT TRUE NOT NULL,
+    unit_of_measure VARCHAR(20) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    notes TEXT
 );
 
-CREATE TABLE version_producto (
+-- Product Versions
+CREATE TABLE product_versions (
     id SERIAL PRIMARY KEY,
-    producto_id INTEGER REFERENCES productos(id) NOT NULL,
+    product_id INTEGER REFERENCES products(id) NOT NULL,
     version INTEGER NOT NULL,
-    habilitado BOOLEAN DEFAULT TRUE NOT NULL,
-    caracteristicas_adicionales JSONB
+    is_active BOOLEAN DEFAULT TRUE NOT NULL,
+    additional_specs JSONB
+    notes TEXT
 );
 
-
--- Piezas
-CREATE TABLE piezas (
+-- Work Orders
+CREATE TABLE work_orders (
     id SERIAL PRIMARY KEY,
-    codigo_material VARCHAR(50) UNIQUE NOT NULL,
-    nombre VARCHAR(150) NOT NULL,
-    tipo VARCHAR(50) NOT NULL,
-    unidad_medida VARCHAR(20) NOT NULL,
-    stock_actual INTEGER DEFAULT 0 NOT NULL,
-    habilitado BOOLEAN DEFAULT TRUE NOT NULL,
-    creado_en TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    comentario TEXT
+    order_number VARCHAR(50) UNIQUE NOT NULL,
+    product_version_id INTEGER REFERENCES product_versions(id) NOT NULL,
+    customer_id INTEGER REFERENCES customers(id) NOT NULL,
+    requested_quantity NUMERIC(12, 2) NOT NULL,
+    status VARCHAR(30) DEFAULT 'CREATED' NOT NULL,
+    scheduled_start_at TIMESTAMP WITH TIME ZONE,
+    scheduled_end_at TIMESTAMP WITH TIME ZONE,
+    is_active BOOLEAN DEFAULT TRUE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    notes TEXT
 );
 
--- Nodos
-CREATE TABLE nodos (
+-- Machines
+CREATE TABLE machines (
     id SERIAL PRIMARY KEY,
-    capacidad_id INTEGER REFERENCES capacidades(id) NOT NULL,
-    version_producto_id INTEGER REFERENCES version_producto(id) NOT NULL,
-    herramientas JSONB,
-    materiales JSONB,
-    piezas_entrada JSONB,
-    piezas_salida JSONB,
-    comentario TEXT
+    name VARCHAR(100) UNIQUE NOT NULL,
+    module_id INTEGER REFERENCES modules(id),
+    type VARCHAR(50) NOT NULL,
+    status VARCHAR(30) DEFAULT 'OPERATIONAL' NOT NULL,
+    active_work JSONB DEFAULT '[]'::jsonb NOT NULL, -- Ej: [{"orden_id": 108, "nodo_id": 2}]
+    queued_work JSONB DEFAULT '[]'::jsonb NOT NULL, -- Ej: [{"orden_id": 108, "nodo_id": 2}]
+    required_permission VARCHAR(50),
+    is_active BOOLEAN DEFAULT TRUE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    notes TEXT
 );
 
-
--- Órdenes de Trabajo / Pedidos
-CREATE TABLE ordenes (
+-- Capabilities
+CREATE TABLE capabilities (
     id SERIAL PRIMARY KEY,
-    numero_orden VARCHAR(50) UNIQUE NOT NULL,
-    version_producto_id INTEGER REFERENCES version_producto(id) NOT NULL,
-    cliente_id INTEGER REFERENCES clientes(id) NOT NULL,
-    cantidad_solicitada NUMERIC(12, 2) NOT NULL,
-    estado VARCHAR(30) DEFAULT 'CREADA' NOT NULL,
-    fecha_inicio_prevista TIMESTAMP WITH TIME ZONE,
-    fecha_fin_prevista TIMESTAMP WITH TIME ZONE,
-    habilitado BOOLEAN DEFAULT TRUE NOT NULL,
-    creado_en TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    comentario TEXT
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    is_active BOOLEAN DEFAULT TRUE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    machine_id INTEGER REFERENCES machines(id) ON DELETE CASCADE,
+    module_id INTEGER REFERENCES modules(id) ON DELETE CASCADE,
+
+    CONSTRAINT chk_exclusive_resource CHECK (
+        (machine_id IS NOT NULL AND module_id IS NULL) OR 
+        (machine_id IS NULL AND module_id IS NOT NULL)
+    ),
+
+    UNIQUE (name, machine_id, module_id)
 );
 
--- Logs de Producción (Registro inmutable paso a paso de lo que ocurre en máquina)
-CREATE TABLE produccion_logs (
+-- Nodes (Process Routing Steps)
+CREATE TABLE nodes (
     id SERIAL PRIMARY KEY,
-    orden_id INTEGER REFERENCES ordenes(id) NOT NULL,
-    maquina_id INTEGER REFERENCES maquinas(id) NOT NULL,
-    nodo_id INTEGER REFERENCES nodos(id) NOT NULL,
-    empleado_id INTEGER REFERENCES empleados(id) NOT NULL,
-    herramienta_id INTEGER REFERENCES herramientas(id),
-    evento VARCHAR(50) NOT NULL,
-    unidades_producidas INTEGER DEFAULT 0 NOT NULL,
-    unidades_defectuosas INTEGER DEFAULT 0 NOT NULL,
-    parametros_proceso JSONB,
-    terminado BOOLEAN DEFAULT FALSE NOT NULL,
-    creado_en TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    comentario TEXT
+    capability_id INTEGER REFERENCES capabilities(id) NOT NULL,
+    product_version_id INTEGER REFERENCES product_versions(id) NOT NULL,
+    tools JSONB,
+    materials JSONB,
+    input_parts JSONB,
+    output_parts JSONB,
+    notes TEXT
 );
 
--- Movimientos de Materiales
-CREATE TABLE stock_materiales_logs (
+-- Tools & Dies (Tooling)
+CREATE TABLE tools (
     id SERIAL PRIMARY KEY,
-    material_id INTEGER REFERENCES materiales(id) NOT NULL,
-    production_log_id INTEGER REFERENCES produccion_logs(id),
-    tipo_movimiento VARCHAR(30) NOT NULL,
-    cantidad NUMERIC(12, 2) NOT NULL,
-    lote_origen VARCHAR(100),
-    creado_en TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    comentario TEXT
+    external_code VARCHAR(50),
+    tool_code VARCHAR(50) UNIQUE NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    entry_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    last_used_at TIMESTAMP WITH TIME ZONE,
+    usage_count INTEGER DEFAULT 0 NOT NULL,
+    max_lifespan INTEGER,
+    is_active BOOLEAN DEFAULT TRUE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    notes TEXT
 );
 
--- Movimientos de Piezas
-CREATE TABLE stock_piezas_logs (
+-- Raw Materials & Consumables
+CREATE TABLE materials (
     id SERIAL PRIMARY KEY,
-    pieza INTEGER REFERENCES piezas(id) NOT NULL,
-    production_log_id INTEGER REFERENCES produccion_logs(id),
-    tipo_movimiento VARCHAR(30) NOT NULL,
-    cantidad NUMERIC(12, 2) NOT NULL,
-    lote_origen VARCHAR(100),
-    creado_en TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    comentario TEXT
+    material_code VARCHAR(50) UNIQUE NOT NULL,
+    name VARCHAR(150) NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    unit_of_measure VARCHAR(20) NOT NULL,
+    current_stock NUMERIC(12, 2) DEFAULT 0.00 NOT NULL,
+    min_stock NUMERIC(12, 2) DEFAULT 0.00 NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    notes TEXT
+);
+
+-- Parts & Components
+CREATE TABLE parts (
+    id SERIAL PRIMARY KEY,
+    part_code VARCHAR(50) UNIQUE NOT NULL,
+    name VARCHAR(150) NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    unit_of_measure VARCHAR(20) NOT NULL,
+    current_stock INTEGER DEFAULT 0 NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    notes TEXT
+);
+
+-- Production Logs (Immutable)
+CREATE TABLE production_logs (
+    id SERIAL PRIMARY KEY,
+    work_order_id INTEGER REFERENCES work_orders(id) NOT NULL,
+    machine_id INTEGER REFERENCES machines(id) NOT NULL,
+    node_id INTEGER REFERENCES nodes(id) NOT NULL,
+    employee_id INTEGER REFERENCES employees(id) NOT NULL,
+    tool_id INTEGER REFERENCES tools(id),
+    event_type VARCHAR(50) NOT NULL,
+    produced_units INTEGER DEFAULT 0 NOT NULL,
+    defective_units INTEGER DEFAULT 0 NOT NULL,
+    process_parameters JSONB,
+    is_completed BOOLEAN DEFAULT FALSE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    notes TEXT
+);
+
+-- Material Stock Movements (Immutable)
+CREATE TABLE material_stock_logs (
+    id SERIAL PRIMARY KEY,
+    material_id INTEGER REFERENCES materials(id) NOT NULL,
+    production_log_id INTEGER REFERENCES production_logs(id),
+    movement_type VARCHAR(30) NOT NULL,
+    quantity NUMERIC(12, 2) NOT NULL,
+    source_batch VARCHAR(100),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    notes TEXT
+);
+
+-- Part Stock Movements (Immutable)
+CREATE TABLE part_stock_logs (
+    id SERIAL PRIMARY KEY,
+    part_id INTEGER REFERENCES parts(id) NOT NULL,
+    production_log_id INTEGER REFERENCES production_logs(id),
+    movement_type VARCHAR(30) NOT NULL,
+    quantity NUMERIC(12, 2) NOT NULL,
+    source_batch VARCHAR(100),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    notes TEXT
 );
 

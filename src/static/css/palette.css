@@ -1,0 +1,34 @@
+:root {
+    /* Fondos Neutros (Cero azul) */
+    --bg-main: #141413;
+    --bg-surface: #1f1f1d;
+    --bg-hover: #2c2c29;
+    
+    /* Bordes */
+    --border-color: #363632;
+    
+    /* Tipografía Cálida */
+    --text-primary: #ededeb;
+    --text-secondary: #9c9b95;
+    
+    /* Acento Principal (Verde Técnico) */
+    --accent-primary: #2ea072;
+    --accent-hover: #23825c;
+    
+    /* Estados sin Rojo */
+    --status-ok: #4ade80;
+    --status-warning: #eab308;
+    --status-error: #ea580c;
+}
+
+body {
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    font-family: Monospace, monospace;
+}
+
+a {
+    color: var(--accent-primary);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}

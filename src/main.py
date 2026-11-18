@@ -9,7 +9,6 @@ app = FastAPI(title="NoLogic MES API", version="0.1.0")
 
 app.mount("/static", StaticFiles(directory="src/static"), name="static")
 
-
 @app.get("/")
 def leer_index():
     return FileResponse("src/static/index.html")
